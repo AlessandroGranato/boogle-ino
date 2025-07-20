@@ -6,25 +6,26 @@
 #include <WiFiClientSecure.h>   // For secure (HTTPS) communication
 #include <ArduinoJson.h>        // To handle JSON data
 
-//Things to do:
+//TODO:
 // Error handling: create a class that contains code (number value, but String format), description (string) and use it when need to return error
-
+// Move delay functions in a separate common method
 
 // Data wire is plugged into port digital port 2 (GPIO4) on the NODEMCU ESP8266
 #define ONE_WIRE_BUS 4
 
-//Device name
+//Device name, unique
 #define DEVICE_ID "DVC-001"
 
-// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs). Used for water temperature sensor
 OneWire oneWire(ONE_WIRE_BUS);
-
 // Pass our oneWire reference to Dallas Temperature. 
 DallasTemperature waterTempSensor(&oneWire);
 
+//Pin used to read water level value
+#define WATER_LEVEL_SENSOR_PIN A0
+
 // define https client object
 WiFiClientSecure client;
-
 // define http client object
 HTTPClient http;
 
@@ -36,8 +37,10 @@ void setup() {
 }
 
 void loop() {
-    float temperature = retrieveWaterTemp();  
-    sendWaterTemp(temperature);
+    float waterTemperature = retrieveWaterTemp();  
+    sendWaterTemp(waterTemperature);
+    int waterLevel = retrieveWaterLevel();
+    //sendWaterLevel(waterLevel); -- TODO
 }
 
 void startSerial(int baudRate) {
@@ -101,14 +104,14 @@ float retrieveWaterTemp()
   // Check if reading was successful
   if(tempC != DEVICE_DISCONNECTED_C) 
   {
-    Serial.print("Temperature is: ");
+    Serial.print("Water temperature is: ");
     Serial.println(tempC);
   } 
   else
   {
     Serial.println("Error: Could not read temperature data");
   }
-  delay(2000);
+  delay(1000);
   return tempC;
 }
 
@@ -157,4 +160,13 @@ bool isWiFiConnected() {
         return false;
     }
     return true;
+}
+
+int retrieveWaterLevel() {
+  int waterLevel = analogRead(WATER_LEVEL_SENSOR_PIN);
+
+  Serial.print("Water level is: ");
+  Serial.println(waterLevel);
+  
+  return waterLevel;
 }
